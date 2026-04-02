@@ -103,4 +103,4 @@ else:
 
 # Footer Branding
 st.divider()
-st.markdown("<center>© 2026 Chundal Gardens Global | Powered by AI Architect Engine</center>", unsafe_allow_name=True)
+st.markdown("<center>© 2026 Chundal Gardens Global | Powered by AI Architect Engine</center>", unsafe_allow_html=True)
