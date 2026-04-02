@@ -54,7 +54,8 @@ class ImageToLandscapeEngine:
         # Using structure color mask to find centroid
         mask = cv2.inRange(hsv, np.array(self.color_map['structures'][0]), 
                           np.array(self.color_map['structures'][1]))
-        contours, _ = cv2.find_experimental_contours(mask) # 2026 optimized
+        # OpenCV 4.x+ standard function for contour detection
+contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         # Default center if not found
         return {'x': rl*0.4, 'y': rw*0.4, 'width': rl*0.1, 'height': rw*0.1}
 
