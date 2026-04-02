@@ -9,7 +9,7 @@ class ImageToLandscapeEngine:
     Converts visual pixels into 3D world coordinates for any acre scale.
     """
     def __init__(self):
-        # 2026 Standard: Color thresholds for landscape features
+        # 2026 Standard: Color thresholds for landscape features (HSV)
         self.color_map = {
             'vegetation': ([35, 40, 40], [85, 255, 255]), # Green shades
             'water': ([90, 50, 50], [130, 255, 255]),     # Blue shades
@@ -21,11 +21,13 @@ class ImageToLandscapeEngine:
         # Convert bytes to OpenCV format
         nparr = np.frombuffer(image_bytes, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if img is None:
+            raise ValueError("Could not decode image. Check file format.")
+            
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        
         h, w, _ = img.shape
-        # Calculate real-world dimensions based on user's selected acres
-        # 1 Acre = 43560 sq ft. Scaling L/W based on aspect ratio
+        
+        # Calculate real-world dimensions (1 Acre = 43560 sq ft)
         total_sqft = target_acres * 43560
         aspect_ratio = w / h
         real_l = np.sqrt(total_sqft * aspect_ratio)
@@ -45,20 +47,30 @@ class ImageToLandscapeEngine:
         return extracted_data
 
     def _detect_zones(self, hsv, h, w) -> Dict[str, Any]:
-        """Detecting Zone 1 to Zone 4 patterns using density maps."""
-        # Logic to find cluster of green (Zone 2) vs scattered (Zone 4)
+        """Placeholder for 2026 Zone density mapping logic."""
         return {}
 
     def _locate_structure(self, hsv, h, w, rl, rw) -> Dict[str, Any]:
-        """Finds the main building coordinates and scales to real dimensions."""
-        # Using structure color mask to find centroid
+        """Finds building coordinates and scales to real dimensions."""
         mask = cv2.inRange(hsv, np.array(self.color_map['structures'][0]), 
                           np.array(self.color_map['structures'][1]))
-        # OpenCV 4.x+ standard function for contour detection
-contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        # Default center if not found
+        
+        # FIXED: Correct OpenCV function call
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        if contours:
+            # Find the largest structural object (likely the house)
+            largest = max(contours, key=cv2.contourArea)
+            M = cv2.moments(largest)
+            if M["m00"] != 0:
+                # Scale image coordinates to real-world feet
+                cx = (M["m10"] / M["m00"]) * (rl / w)
+                cy = (M["m01"] / M["m00"]) * (rw / h)
+                return {'x': cx, 'y': cy, 'width': rl*0.1, 'height': rw*0.1}
+        
+        # Default safety: Center placement if detection fails
         return {'x': rl*0.4, 'y': rw*0.4, 'width': rl*0.1, 'height': rw*0.1}
 
     def _extract_path_network(self, hsv, h, w) -> List[Tuple[float, float]]:
-        """Extracts curved path patterns from the image style."""
+        """Placeholder for spline-based path extraction logic."""
         return []
